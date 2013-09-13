@@ -1,0 +1,29 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Extension/ParticleSystemExtension.cs">
+    <Files>
+      <File FileName="Assets/Grid/UniformGrid.cs" Line="6" Column="13" />
+      <File FileName="Assets/Olimar/PikminFacade.cs" Line="29" Column="14" />
+      <File FileName="Assets/Olimar/Pikmin.cs" Line="12" Column="19" />
+      <File FileName="Assets/Grid/GridController.cs" Line="17" Column="3" />
+      <File FileName="Assets/Extension/ParticleSystemExtension.cs" Line="13" Column="1" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State expanded="True" selected="True" />
+      </Pad>
+      <Pad Id="ClassPad">
+        <State expanded="True" selected="True" />
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State>
+          <Value>pt</Value>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
