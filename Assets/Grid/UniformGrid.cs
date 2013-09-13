@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class UniformGrid {
-	public readonly static Vector3 SMALL_AMOUNT = 1e-6f * Vector3.one;
+	public readonly static Vector3 SMALL_AMOUNT = 1e-4f * Vector3.one;
 	
 	private int _nGrid;
 	private Vector3 _worldMin;
@@ -14,7 +14,7 @@ public class UniformGrid {
 		_tmpFound = new HashSet<int>();
 	}
 	
-	public void Build(Vector3[] positions, IList<int> ids, int length) {
+	public void Build(Vector3[] positions, int[] ids, int length) {
 		var world = Encapsulate(positions, length);
 		_worldMin = world.min;
 		_nGrid = Mathf.Max(1, (int)Mathf.Pow(length, 0.333f));
@@ -49,7 +49,7 @@ public class UniformGrid {
 		
 		var center = new Vector3(0.5f * (minx + maxx), 0.5f * (miny + maxy), 0.5f * (minz + maxz));
 		var size = new Vector3(1.1f * (maxx - minx), 1.1f * (maxy - miny), 1.1f * (maxz - minz));
-		return new Bounds(center, size);
+		return new Bounds(center, size + SMALL_AMOUNT);
 	}
 	
 	public void GetIndices(Vector3 pos, out int ix, out int iy, out int iz) {

@@ -19,6 +19,9 @@ public class Crowd : MonoBehaviour {
 	
 	private List<Boid> _fishes;
 	private Bounds _fieldBounds;
+	private UniformGrid _grid;
+	private Vector3[] _positions;
+	private int[] _ids;
 
 	// Use this for initialization
 	void Start () {
@@ -32,6 +35,15 @@ public class Crowd : MonoBehaviour {
 		}
 		
 		_fieldBounds = field.collider.bounds;
+		
+		_positions = new Vector3[nFishes];
+		_ids = new int[_fishes.Count];
+		for (int i = 0; i < nFishes; i++) {
+			_positions[i] = _fishes[i].position;
+			_ids[i] = i;
+		}
+		_grid = new UniformGrid();
+		_grid.Build(_positions, _ids, nFishes);
 	}
 
 	// Update is called once per frame
@@ -40,6 +52,9 @@ public class Crowd : MonoBehaviour {
 		var dt = Time.deltaTime;
 		
 		boundPosition ();
+		for (int i = 0; i < nFishes; i++)
+			_positions[i] = _fishes[i].position;
+		_grid.Build(_positions, _ids, nFishes);
 		
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
@@ -120,7 +135,8 @@ public class Crowd : MonoBehaviour {
 	IEnumerable<Boid> GetNeigbhors(Boid me, float radius) {
 		var sqrRadius = radius * radius;
 		
-		foreach (var f in _fishes) {
+		foreach (var i in _grid.GetNeighbors(me.position, radius)) {
+			var f = _fishes[i];
 			var distVec = f.position - me.position;
 			if (f != me && distVec.sqrMagnitude < sqrRadius)
 				yield return f;
