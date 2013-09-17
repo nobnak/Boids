@@ -1,21 +1,20 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Fish/Crowd.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Grid/UniformGrid.cs">
     <Files>
-      <File FileName="Assets/Grid/UniformGrid.cs" Line="63" Column="21" />
-      <File FileName="Assets/Fish/Boid.cs" Line="17" Column="73" />
-      <File FileName="Assets/Fish/Crowd.cs" Line="135" Column="24" />
-      <File FileName="Assets/Grid/GridController.cs" Line="30" Column="1" />
+      <File FileName="Assets/Fish/Crowd.cs" Line="52" Column="27" />
+      <File FileName="Assets/Grid/GridController.cs" Line="29" Column="31" />
+      <File FileName="Assets/Grid/UniformGrid.cs" Line="28" Column="3" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
           <Node name="Assembly-CSharp" expanded="True">
             <Node name="Assets" expanded="True">
-              <Node name="Fish" expanded="True">
-                <Node name="Crowd.cs" selected="True" />
+              <Node name="Fish" expanded="True" />
+              <Node name="Grid" expanded="True">
+                <Node name="UniformGrid.cs" selected="True" />
               </Node>
-              <Node name="Grid" expanded="True" />
             </Node>
           </Node>
         </State>
@@ -31,7 +30,9 @@
     </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="/Users/nnakata/Documents/GitHub/Boids/Assets/Grid/UniformGrid.cs" line="25" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

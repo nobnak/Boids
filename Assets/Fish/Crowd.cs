@@ -19,7 +19,7 @@ public class Crowd : MonoBehaviour {
 	
 	private List<Boid> _fishes;
 	private Bounds _fieldBounds;
-	private UniformGrid _grid;
+	private UniformGrid2D _grid;
 	private Vector3[] _positions;
 	private int[] _ids;
 
@@ -42,7 +42,7 @@ public class Crowd : MonoBehaviour {
 			_positions[i] = _fishes[i].position;
 			_ids[i] = i;
 		}
-		_grid = new UniformGrid();
+		_grid = new UniformGrid2D();
 		_grid.Build(_positions, _ids, nFishes);
 	}
 
@@ -58,37 +58,39 @@ public class Crowd : MonoBehaviour {
 		
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
-			var velocityAntiPenetrate = AntiPenetrate(fish);
-			var velocitySeparate = Separate(fish);
-			var velocityAlignment = Alignment(fish);
-			var velocityCohesion = Cohesion(fish);
+			var neighborIndices = _grid.GetNeighbors(fish.position, radiuses[INDEX_COHESION]).ToArray();
+			var neighbors = System.Array.ConvertAll(neighborIndices, (iNeighbor) => _fishes[iNeighbor]);
+			var velocityAntiPenetrate = AntiPenetrate(fish, neighbors);
+			var velocitySeparate = Separate(fish, neighbors);
+			var velocityAlignment = Alignment(fish, neighbors);
+			var velocityCohesion = Cohesion(fish, neighbors);
 			dvs[i] = velocityAntiPenetrate + velocitySeparate + velocityAlignment + velocityCohesion;
 			fish.velocity = Vector3.ClampMagnitude(fish.velocity + (fish.velocity * acceleration * dt + dvs[i]), maxSpeed);
 		}
 	}
 	
-	Vector2 AntiPenetrate(Boid me) {
+	Vector2 AntiPenetrate(Boid me, Boid[] neighbors) {
 		var v = Vector2.zero;
-		if (GetNeigbhors(me, radiuses[INDEX_ANTI_PENET]).Count() > 0) {
+		if (FindInRadius(me.position, radiuses[INDEX_ANTI_PENET], neighbors).Count() > 0) {
 			v = Random.insideUnitCircle * maxSpeed;
 		}
 		return weights[INDEX_ANTI_PENET] * v;
 	}
 	
-	Vector2 Separate(Boid me) {
+	Vector2 Separate(Boid me, Boid[] neighbors) {
 		var v = Vector2.zero;
-		foreach (var f in GetNeigbhors(me, radiuses[INDEX_SEPARATE])) {
+		foreach (var f in FindInRadius(me.position, radiuses[INDEX_SEPARATE], neighbors)) {
 			var distvec = f.position - me.position;
 			v -= distvec;
 		}
 		return weights[INDEX_SEPARATE] * v;
 	}
 	
-	Vector2 Alignment(Boid me) {
+	Vector2 Alignment(Boid me, Boid[] neighbors) {
 		var v = Vector2.zero;
 		var count = 0;
 		var sqrMinRadius = radiuses[INDEX_SEPARATE] * radiuses[INDEX_SEPARATE];
-		foreach (var f in GetNeigbhors(me, radiuses[INDEX_ALIGNMENT])) {
+		foreach (var f in FindInRadius(me.position, radiuses[INDEX_ALIGNMENT], neighbors)) {
 			var distvec = f.position - me.position;
 			if (distvec.sqrMagnitude < sqrMinRadius)
 				continue;
@@ -101,11 +103,11 @@ public class Crowd : MonoBehaviour {
 		return weights[INDEX_ALIGNMENT] * v;
 	}
 	
-	Vector2 Cohesion(Boid me) {
+	Vector2 Cohesion(Boid me, Boid[] neighbors) {
 		var v = Vector2.zero;
 		var count = 0;
 		var sqrMinRadius = radiuses[INDEX_ALIGNMENT] * radiuses[INDEX_ALIGNMENT];
-		foreach (var f in GetNeigbhors(me, radiuses[INDEX_COHESION])) {
+		foreach (var f in FindInRadius(me.position, radiuses[INDEX_COHESION], neighbors)) {
 			var distvec = f.position - me.position;
 			if (distvec.sqrMagnitude < sqrMinRadius)
 				continue;
@@ -132,14 +134,11 @@ public class Crowd : MonoBehaviour {
 		}
 	}
 	
-	IEnumerable<Boid> GetNeigbhors(Boid me, float radius) {
+	IEnumerable<Boid> FindInRadius(Vector2 center, float radius, Boid[] neighbors) {
 		var sqrRadius = radius * radius;
-		
-		foreach (var i in _grid.GetNeighbors(me.position, radius)) {
-			var f = _fishes[i];
-			var distVec = f.position - me.position;
-			if (f != me && distVec.sqrMagnitude < sqrRadius)
-				yield return f;
+		foreach (var b in neighbors) {
+			if ((b.position - center).sqrMagnitude < sqrRadius)
+				yield return b;
 		}
 	}
 }

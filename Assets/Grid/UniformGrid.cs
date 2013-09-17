@@ -4,7 +4,7 @@ using UnityEngine;
 public class UniformGrid {
 	public readonly static Vector3 SMALL_AMOUNT = 1e-4f * Vector3.one;
 	
-	private int _nGrid;
+	private int _nX, _nY, _nZ;
 	private Vector3 _worldMin;
 	private Vector3 _rCellSize;
 	private List<int>[,,] _cells;
@@ -17,10 +17,14 @@ public class UniformGrid {
 	public void Build(Vector3[] positions, int[] ids, int length) {
 		var world = Encapsulate(positions, length);
 		_worldMin = world.min;
-		_nGrid = Mathf.Max(1, (int)Mathf.Pow(length, 0.333f));
-		var cellSize = world.size / _nGrid;
+		var size = world.size + SMALL_AMOUNT;
+		var scale = Mathf.Pow((float)length  / (size.x * size.y * size.z), 0.3333f);
+		_nX = Mathf.Max(1, (int)(size.x * scale));
+		_nY = Mathf.Max(1, (int)(size.y * scale));
+		_nZ = Mathf.Max(1, (int)(size.z * scale));
+		var cellSize = new Vector3(size.x / _nX, size.y / _nY, size.z / _nZ);
 		_rCellSize = new Vector3(1f / cellSize.x, 1f / cellSize.y, 1f / cellSize.z);
-		_cells = new List<int>[_nGrid, _nGrid, _nGrid];
+		_cells = new List<int>[_nX, _nY, _nZ];
 		
 		int ix, iy, iz;
 		for (var i = 0; i < length; i++) {
@@ -54,9 +58,9 @@ public class UniformGrid {
 	
 	public void GetIndices(Vector3 pos, out int ix, out int iy, out int iz) {
 		var relativePos = pos - _worldMin;
-		ix = (int)(relativePos.x * _rCellSize.x); ix = ix < 0 ? 0 : (ix >= _nGrid ? _nGrid - 1 : ix);
-		iy = (int)(relativePos.y * _rCellSize.y); iy = iy < 0 ? 0 : (iy >= _nGrid ? _nGrid - 1 : iy);
-		iz = (int)(relativePos.z * _rCellSize.z); iz = iz < 0 ? 0 : (iz >= _nGrid ? _nGrid - 1 : iz);
+		ix = (int)(relativePos.x * _rCellSize.x); ix = ix < 0 ? 0 : (ix >= _nX ? _nX - 1 : ix);
+		iy = (int)(relativePos.y * _rCellSize.y); iy = iy < 0 ? 0 : (iy >= _nY ? _nY - 1 : iy);
+		iz = (int)(relativePos.z * _rCellSize.z); iz = iz < 0 ? 0 : (iz >= _nZ ? _nZ - 1 : iz);
 	}
 
 	public IEnumerable<int> GetNeighbors(Bounds house) {
@@ -65,9 +69,11 @@ public class UniformGrid {
 		int maxix, maxiy, maxiz;
 		GetIndices(house.min, out minix, out miniy, out miniz);
 		GetIndices(house.max, out maxix, out maxiy, out maxiz);
+		var nGrid = 0;
 		for (var ix = minix; ix <= maxix; ix++) {
 			for (var iy = miniy; iy <= maxiy; iy++) {
 				for (var iz = miniz; iz <= maxiz; iz++) {
+					nGrid++;
 					var residents = _cells[ix, iy, iz];
 					if (residents == null)
 						continue;
@@ -80,6 +86,7 @@ public class UniformGrid {
 				}
 			}
 		}
+		Debug.Log("nGrid per GetNeighbors " + nGrid);
 	}
 	
 	public IEnumerable<int> GetNeighbors(Vector3 center, float radius) {

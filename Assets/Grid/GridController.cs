@@ -7,14 +7,14 @@ public class GridController : MonoBehaviour {
 	public ParticleSystem shuriken;
 	public Marker[] markers;
 	
-	private UniformGrid _grid;
+	private UniformGrid2D _grid;
 	private ParticleSystem.Particle[] _particles;
 	private Vector3[] _positions;
 	private int[] _ids;
 
 	// Use this for initialization
 	void Start () {
-		_grid = new UniformGrid();
+		_grid = new UniformGrid2D();
 		_particles = new ParticleSystem.Particle[0];
 		_positions = new Vector3[0];
 		_ids = new int[0];
@@ -28,7 +28,7 @@ public class GridController : MonoBehaviour {
 		
 		UpdateVariables(nParticles);
 		_grid.Build(_positions, _ids, nParticles);
-		var startColor = shuriken.startColor;
+		var startColor = (Color32)shuriken.startColor;
 		for (int i = 0; i < nParticles; i++)
 			_particles[i].color = startColor;
 		foreach (var m in markers) {
@@ -57,5 +57,5 @@ public class GridController : MonoBehaviour {
 public class Marker {
 	public Transform target;
 	public float radius;
-	public Color color;
+	public Color32 color;
 }

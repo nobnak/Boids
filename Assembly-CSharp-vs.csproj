@@ -49,6 +49,7 @@
      <Compile Include="Assets\Fish\Crowd.cs" />
      <Compile Include="Assets\Grid\GridController.cs" />
      <Compile Include="Assets\Grid\UniformGrid.cs" />
+     <Compile Include="Assets\Grid\UniformGrid2D.cs" />
      <Compile Include="Assets\Olimar\Graph.cs" />
      <Compile Include="Assets\Olimar\Olimar.cs" />
      <Compile Include="Assets\Olimar\Pikmin.cs" />
