@@ -19,7 +19,7 @@ public class Crowd : MonoBehaviour {
 	
 	private List<Boid> _fishes;
 	private Bounds _fieldBounds;
-	private UniformGrid2D _grid;
+	private IUniformGrid _grid;
 	private Vector3[] _positions;
 	private int[] _ids;
 
@@ -42,7 +42,7 @@ public class Crowd : MonoBehaviour {
 			_positions[i] = _fishes[i].position;
 			_ids[i] = i;
 		}
-		_grid = new UniformGrid2D();
+		_grid = new UniformGrid2DFixed();
 		_grid.Build(_positions, _ids, nFishes);
 	}
 

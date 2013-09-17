@@ -7,14 +7,14 @@ public class GridController : MonoBehaviour {
 	public ParticleSystem shuriken;
 	public Marker[] markers;
 	
-	private UniformGrid2D _grid;
+	private IUniformGrid _grid;
 	private ParticleSystem.Particle[] _particles;
 	private Vector3[] _positions;
 	private int[] _ids;
 
 	// Use this for initialization
 	void Start () {
-		_grid = new UniformGrid2D();
+		_grid = new UniformGrid2DFixed();
 		_particles = new ParticleSystem.Particle[0];
 		_positions = new Vector3[0];
 		_ids = new int[0];

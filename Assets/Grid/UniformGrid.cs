@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UniformGrid {
+public class UniformGrid : IUniformGrid {
 	public readonly static Vector3 SMALL_AMOUNT = 1e-4f * Vector3.one;
 	
 	private int _nX, _nY, _nZ;
@@ -93,13 +93,21 @@ public class UniformGrid {
 		var house = new Bounds(center, 2 * radius * Vector3.one);
 		return GetNeighbors(house);
 	}
-	
-	public struct LR {
-		public int left;
-		public int right;
-		public LR(int left, int right) {
-			this.left = left;
-			this.right = right;
-		}
+}
+
+
+public interface IUniformGrid {
+	void Build(Vector3[] positions, int[] ids, int length);
+	IEnumerable<int> GetNeighbors(Bounds house);
+	IEnumerable<int> GetNeighbors(Vector3 center, float radius);
+}
+
+public struct LR {
+	public int left;
+	public int right;
+	public LR(int left, int right) {
+		this.left = left;
+		this.right = right;
 	}
 }
+	

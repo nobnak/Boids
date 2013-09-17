@@ -1,10 +1,14 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Grid/UniformGrid.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Grid/UniformGrid2DFixed.cs">
     <Files>
-      <File FileName="Assets/Fish/Crowd.cs" Line="52" Column="27" />
-      <File FileName="Assets/Grid/GridController.cs" Line="29" Column="31" />
-      <File FileName="Assets/Grid/UniformGrid.cs" Line="28" Column="3" />
+      <File FileName="Assets/Fish/Crowd.cs" Line="45" Column="33" />
+      <File FileName="Assets/Grid/GridController.cs" Line="17" Column="33" />
+      <File FileName="Assets/Grid/UniformGrid.cs" Line="95" Column="3" />
+      <File FileName="Assets/Grid/UniformGrid2D.cs" Line="79" Column="5" />
+      <File FileName="Assets/Grid/UniformGrid2DFixed.cs" Line="25" Column="45" />
+      <File FileName="Assets/OpenCL/Controller.cs" Line="15" Column="31" />
+      <File FileName="Assets/OpenCL/GPGPU_UniformGrid.cs" Line="77" Column="14" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -13,8 +17,9 @@
             <Node name="Assets" expanded="True">
               <Node name="Fish" expanded="True" />
               <Node name="Grid" expanded="True">
-                <Node name="UniformGrid.cs" selected="True" />
+                <Node name="UniformGrid2DFixed.cs" selected="True" />
               </Node>
+              <Node name="OpenCL" expanded="True" />
             </Node>
           </Node>
         </State>
@@ -30,9 +35,7 @@
     </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="/Users/nnakata/Documents/GitHub/Boids/Assets/Grid/UniformGrid.cs" line="25" />
-    </BreakpointStore>
+    <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

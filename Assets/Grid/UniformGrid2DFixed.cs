@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UniformGrid2D : IUniformGrid {
+public class UniformGrid2DFixed : IUniformGrid {
 	public readonly static Vector3 SMALL_AMOUNT = 1e-4f * Vector3.one;
+	public int nEntitiesPerCell = 4;
 	
 	private int _nX, _nY;
 	private Vector3 _worldMin;
 	private Vector3 _rCellSize;
-	private List<int>[,] _cells;
-	private HashSet<int> _tmpFound;
+	private int[] _cells;
+	private int[] _counters;
 	
-	public UniformGrid2D() {
-		_tmpFound = new HashSet<int>();
+	public UniformGrid2DFixed() {
+		_cells = new int[0];
+		_counters = new int[0];
 	}
 	
 	public void Build(Vector3[] positions, int[] ids, int length) {
@@ -23,18 +25,27 @@ public class UniformGrid2D : IUniformGrid {
 		_nY = Mathf.Max(1, (int)(size.y * scale));
 		var cellSize = new Vector2(size.x / _nX, size.y / _nY);
 		_rCellSize = new Vector2(1f / cellSize.x, 1f / cellSize.y);
-		_cells = new List<int>[_nX, _nY];
+		if (_counters.Length < (_nX * _nY)) {
+			_cells = new int[nEntitiesPerCell * _nX * _nY];
+			_counters = new int[_nX * _nY];
+		} else {
+			System.Array.Clear(_counters, 0, _counters.Length);
+		}
 		
 		int ix, iy;
 		for (var i = 0; i < length; i++) {
 			GetIndices(positions[i], out ix, out iy);
-			var list = _cells[ix, iy];
-			if (list == null) {
-				list = new List<int>(1);
-				_cells[ix, iy] = list;
-			}
-			list.Add(ids[i]);
+			var cellIndex = XY2CellBaseIndex(ix, iy);
+			var count = _counters[cellIndex];
+			if (count < nEntitiesPerCell) {
+				_cells[nEntitiesPerCell * cellIndex + count] = ids[i];
+				_counters[cellIndex] = ++count;
+			}				
 		}
+	}
+	
+	public int XY2CellBaseIndex(int ix, int iy) {
+		return (ix + _nX * iy);
 	}
 	
 	public Bounds Encapsulate(Vector3[] positions, int length) {
@@ -60,20 +71,16 @@ public class UniformGrid2D : IUniformGrid {
 	}
 
 	public IEnumerable<int> GetNeighbors(Bounds house) {
-		_tmpFound.Clear();
 		int minix, miniy;
 		int maxix, maxiy;
 		GetIndices(house.min, out minix, out miniy);
 		GetIndices(house.max, out maxix, out maxiy);
 		for (var ix = minix; ix <= maxix; ix++) {
 			for (var iy = miniy; iy <= maxiy; iy++) {
-				var residents = _cells[ix, iy];
-				if (residents == null)
-					continue;
-				foreach (var p in residents) {
-					if (_tmpFound.Contains(p))
-						continue;
-					_tmpFound.Add(p);
+				var cellIndex = XY2CellBaseIndex(ix, iy);
+				var count = _counters[cellIndex];
+				for (var offset = 0; offset < count; offset++) {
+					var p = _cells[nEntitiesPerCell * cellIndex + offset];
 					yield return p;
 				}
 			}
