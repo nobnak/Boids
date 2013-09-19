@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public class Crowd : MonoBehaviour {
+public class Crowd3D : MonoBehaviour {
 	public const int INDEX_ANTI_PENET = 0;
 	public const int INDEX_SEPARATE = 1;
 	public const int INDEX_ALIGNMENT = 2;
@@ -11,13 +11,14 @@ public class Crowd : MonoBehaviour {
 	public GameObject field;
 	public GameObject fishfab;
 	public int nFishes;
+	public float minSpeed;
 	public float maxSpeed;
 	public float maxForce;
 	public float[] weights;
 	public float[] radiuses;
 	public float acceleration;
 	
-	private List<Boid> _fishes;
+	private List<Boid3D> _fishes;
 	private Bounds _fieldBounds;
 	private IUniformGrid _grid;
 	private Vector3[] _positions;
@@ -25,12 +26,12 @@ public class Crowd : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		_fishes = new List<Boid>();
+		_fishes = new List<Boid3D>();
 		for (int i = 0; i < nFishes; i++) {
 			var f = (GameObject)Instantiate(fishfab);
 			f.transform.parent = transform;
-			var b = f.GetComponent<Boid>();
-			b.velocity = maxSpeed * Random.insideUnitCircle.normalized;
+			var b = f.GetComponent<Boid3D>();
+			b.velocity = maxSpeed * Random.insideUnitSphere.normalized;
 			_fishes.Add(b);
 		}
 		
@@ -48,7 +49,7 @@ public class Crowd : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		var dvs = new Vector2[_fishes.Count];
+		var dvs = new Vector3[_fishes.Count];
 		var dt = Time.deltaTime;
 		
 		boundPosition ();
@@ -56,6 +57,8 @@ public class Crowd : MonoBehaviour {
 			_positions[i] = _fishes[i].position;
 		_grid.Build(_positions, _ids, nFishes);
 		
+		var sqrMaxSpeed = maxSpeed * maxSpeed;
+		var sqrMinSpeed = minSpeed * minSpeed;
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
 			var neighborIndices = _grid.GetNeighbors(fish.position, radiuses[INDEX_COHESION]).ToArray();
@@ -65,20 +68,26 @@ public class Crowd : MonoBehaviour {
 			var velocityAlignment = Alignment(fish, neighbors);
 			var velocityCohesion = Cohesion(fish, neighbors);
 			dvs[i] = velocityAntiPenetrate + velocitySeparate + velocityAlignment + velocityCohesion;
-			fish.velocity = Vector3.ClampMagnitude(fish.velocity + (fish.velocity * acceleration * dt + dvs[i]), maxSpeed);
+			
+			fish.velocity += dvs[i];
+			var sqrSpeed = fish.velocity.sqrMagnitude;
+			if (sqrMaxSpeed < sqrSpeed)
+				fish.velocity = fish.velocity.normalized * maxSpeed;
+			else if (sqrSpeed < sqrMinSpeed)
+				fish.velocity *= 1f + acceleration * dt;
 		}
 	}
 	
-	Vector2 AntiPenetrate(Boid me, Boid[] neighbors) {
-		var v = Vector2.zero;
+	Vector3 AntiPenetrate(Boid3D me, Boid3D[] neighbors) {
+		var v = Vector3.zero;
 		if (FindInRadius(me.position, radiuses[INDEX_ANTI_PENET], neighbors).Count() > 0) {
 			v = Random.insideUnitCircle * maxSpeed;
 		}
 		return weights[INDEX_ANTI_PENET] * v;
 	}
 	
-	Vector2 Separate(Boid me, Boid[] neighbors) {
-		var v = Vector2.zero;
+	Vector3 Separate(Boid3D me, Boid3D[] neighbors) {
+		var v = Vector3.zero;
 		foreach (var f in FindInRadius(me.position, radiuses[INDEX_SEPARATE], neighbors)) {
 			var distvec = f.position - me.position;
 			v -= distvec;
@@ -86,8 +95,8 @@ public class Crowd : MonoBehaviour {
 		return weights[INDEX_SEPARATE] * v;
 	}
 	
-	Vector2 Alignment(Boid me, Boid[] neighbors) {
-		var v = Vector2.zero;
+	Vector3 Alignment(Boid3D me, Boid3D[] neighbors) {
+		var v = Vector3.zero;
 		var count = 0;
 		var sqrMinRadius = radiuses[INDEX_SEPARATE] * radiuses[INDEX_SEPARATE];
 		foreach (var f in FindInRadius(me.position, radiuses[INDEX_ALIGNMENT], neighbors)) {
@@ -103,8 +112,8 @@ public class Crowd : MonoBehaviour {
 		return weights[INDEX_ALIGNMENT] * v;
 	}
 	
-	Vector2 Cohesion(Boid me, Boid[] neighbors) {
-		var v = Vector2.zero;
+	Vector3 Cohesion(Boid3D me, Boid3D[] neighbors) {
+		var v = Vector3.zero;
 		var count = 0;
 		var sqrMinRadius = radiuses[INDEX_ALIGNMENT] * radiuses[INDEX_ALIGNMENT];
 		foreach (var f in FindInRadius(me.position, radiuses[INDEX_COHESION], neighbors)) {
@@ -122,19 +131,21 @@ public class Crowd : MonoBehaviour {
 	
 	void boundPosition ()
 	{
-		var fieldBase = (Vector2)_fieldBounds.min;
-		var fieldSize = (Vector2)_fieldBounds.size;
+		var fieldBase = _fieldBounds.min;
+		var fieldSize = _fieldBounds.size;
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
 			if (_fieldBounds.Contains(fish.position))
 				continue;
 			var relativePos = fish.position - fieldBase;
-			var t = new Vector2(Mathf.Repeat(relativePos.x / fieldSize.x, 1f), Mathf.Repeat(relativePos.y / fieldSize.y, 1f));
-			fish.position = Vector2.Scale(t, fieldSize) + fieldBase;
+			var t = new Vector3(Mathf.Repeat(relativePos.x / fieldSize.x, 1f), 
+				Mathf.Repeat(relativePos.y / fieldSize.y, 1f), 
+				Mathf.Repeat(relativePos.z / fieldSize.z, 1f));
+			fish.position = Vector3.Scale(t, fieldSize) + fieldBase;
 		}
 	}
 	
-	IEnumerable<Boid> FindInRadius(Vector2 center, float radius, Boid[] neighbors) {
+	IEnumerable<Boid3D> FindInRadius(Vector3 center, float radius, Boid3D[] neighbors) {
 		var sqrRadius = radius * radius;
 		foreach (var b in neighbors) {
 			if ((b.position - center).sqrMagnitude < sqrRadius)

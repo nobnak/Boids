@@ -1,11 +1,11 @@
 using UnityEngine;
 using System.Collections;
 
-public class Boid : MonoBehaviour {
+public class Boid3D : MonoBehaviour {
 	public float easing;
 	
-	public Vector2 position;	
-	public Vector2 velocity;
+	public Vector3 position;
+	public Vector3 velocity;
 	public float rotateSpeed;
 	
 	void Update() {

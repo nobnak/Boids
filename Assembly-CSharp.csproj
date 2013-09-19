@@ -45,12 +45,15 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Extension\ParticleSystemExtension.cs" />
-     <Compile Include="Assets\Fish\Boid.cs" />
-     <Compile Include="Assets\Fish\Crowd.cs" />
+     <Compile Include="Assets\Fish2D\Boid2D.cs" />
+     <Compile Include="Assets\Fish2D\Crowd2D.cs" />
+     <Compile Include="Assets\Fish3D\Boid3D.cs" />
+     <Compile Include="Assets\Fish3D\Crowd3D.cs" />
      <Compile Include="Assets\Grid\GridController.cs" />
      <Compile Include="Assets\Grid\UniformGrid.cs" />
      <Compile Include="Assets\Grid\UniformGrid2D.cs" />
      <Compile Include="Assets\Grid\UniformGrid2DFixed.cs" />
+     <Compile Include="Assets\Grid\UniformGrid3DFixed.cs" />
      <Compile Include="Assets\Olimar\Graph.cs" />
      <Compile Include="Assets\Olimar\Olimar.cs" />
      <Compile Include="Assets\Olimar\Pikmin.cs" />
