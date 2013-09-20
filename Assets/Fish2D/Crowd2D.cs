@@ -20,7 +20,7 @@ public class Crowd2D : MonoBehaviour {
 	
 	private List<Boid2D> _fishes;
 	private Bounds _fieldBounds;
-	private IUniformGrid _grid;
+	private IPositionUniverse _grid;
 	private Vector3[] _positions;
 	private int[] _ids;
 

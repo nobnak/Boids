@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UniformGrid2DFixed : IUniformGrid {
+public class UniformGrid2DFixed : IPositionUniverse {
 	public readonly static Vector3 SMALL_AMOUNT = 1e-4f * Vector3.one;
 	public int nEntitiesPerCell = 4;
 	

@@ -18,20 +18,20 @@ public class Crowd3D : MonoBehaviour {
 	public float[] radiuses;
 	public float acceleration;
 	
-	private List<Boid3D> _fishes;
+	private List<Vehicle3D> _fishes;
 	private Bounds _fieldBounds;
-	private IUniformGrid _grid;
+	private IPositionUniverse _grid;
 	private Vector3[] _positions;
 	private int[] _ids;
 
 	// Use this for initialization
 	void Start () {
-		_fishes = new List<Boid3D>();
+		_fishes = new List<Vehicle3D>();
 		for (int i = 0; i < nFishes; i++) {
 			var f = (GameObject)Instantiate(fishfab);
 			f.transform.parent = transform;
-			var b = f.GetComponent<Boid3D>();
-			b.velocity = maxSpeed * Random.insideUnitSphere.normalized;
+			var b = f.GetComponent<Vehicle3D>();
+			b.currentVelocity = maxSpeed * Random.insideUnitSphere.normalized;
 			_fishes.Add(b);
 		}
 		
@@ -40,7 +40,7 @@ public class Crowd3D : MonoBehaviour {
 		_positions = new Vector3[nFishes];
 		_ids = new int[_fishes.Count];
 		for (int i = 0; i < nFishes; i++) {
-			_positions[i] = _fishes[i].position;
+			_positions[i] = _fishes[i].currentPosition;
 			_ids[i] = i;
 		}
 		_grid = new UniformGrid2DFixed();
@@ -54,14 +54,14 @@ public class Crowd3D : MonoBehaviour {
 		
 		boundPosition ();
 		for (int i = 0; i < nFishes; i++)
-			_positions[i] = _fishes[i].position;
+			_positions[i] = _fishes[i].currentPosition;
 		_grid.Build(_positions, _ids, nFishes);
 		
 		var sqrMaxSpeed = maxSpeed * maxSpeed;
 		var sqrMinSpeed = minSpeed * minSpeed;
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
-			var neighborIndices = _grid.GetNeighbors(fish.position, radiuses[INDEX_COHESION]).ToArray();
+			var neighborIndices = _grid.GetNeighbors(fish.currentPosition, radiuses[INDEX_COHESION]).ToArray();
 			var neighbors = System.Array.ConvertAll(neighborIndices, (iNeighbor) => _fishes[iNeighbor]);
 			var velocityAntiPenetrate = AntiPenetrate(fish, neighbors);
 			var velocitySeparate = Separate(fish, neighbors);
@@ -69,62 +69,62 @@ public class Crowd3D : MonoBehaviour {
 			var velocityCohesion = Cohesion(fish, neighbors);
 			dvs[i] = velocityAntiPenetrate + velocitySeparate + velocityAlignment + velocityCohesion;
 			
-			fish.velocity += dvs[i];
-			var sqrSpeed = fish.velocity.sqrMagnitude;
+			fish.currentVelocity += dvs[i];
+			var sqrSpeed = fish.currentVelocity.sqrMagnitude;
 			if (sqrMaxSpeed < sqrSpeed)
-				fish.velocity = fish.velocity.normalized * maxSpeed;
+				fish.currentVelocity = fish.currentVelocity.normalized * maxSpeed;
 			else if (sqrSpeed < sqrMinSpeed)
-				fish.velocity *= 1f + acceleration * dt;
+				fish.currentVelocity *= 1f + acceleration * dt;
 		}
 	}
 	
-	Vector3 AntiPenetrate(Boid3D me, Boid3D[] neighbors) {
+	Vector3 AntiPenetrate(Vehicle3D me, Vehicle3D[] neighbors) {
 		var v = Vector3.zero;
-		if (FindInRadius(me.position, radiuses[INDEX_ANTI_PENET], neighbors).Count() > 0) {
+		if (FindInRadius(me.currentPosition, radiuses[INDEX_ANTI_PENET], neighbors).Count() > 0) {
 			v = Random.insideUnitCircle * maxSpeed;
 		}
 		return weights[INDEX_ANTI_PENET] * v;
 	}
 	
-	Vector3 Separate(Boid3D me, Boid3D[] neighbors) {
+	Vector3 Separate(Vehicle3D me, Vehicle3D[] neighbors) {
 		var v = Vector3.zero;
-		foreach (var f in FindInRadius(me.position, radiuses[INDEX_SEPARATE], neighbors)) {
-			var distvec = f.position - me.position;
+		foreach (var f in FindInRadius(me.currentPosition, radiuses[INDEX_SEPARATE], neighbors)) {
+			var distvec = f.currentPosition - me.currentPosition;
 			v -= distvec;
 		}
 		return weights[INDEX_SEPARATE] * v;
 	}
 	
-	Vector3 Alignment(Boid3D me, Boid3D[] neighbors) {
+	Vector3 Alignment(Vehicle3D me, Vehicle3D[] neighbors) {
 		var v = Vector3.zero;
 		var count = 0;
 		var sqrMinRadius = radiuses[INDEX_SEPARATE] * radiuses[INDEX_SEPARATE];
-		foreach (var f in FindInRadius(me.position, radiuses[INDEX_ALIGNMENT], neighbors)) {
-			var distvec = f.position - me.position;
+		foreach (var f in FindInRadius(me.currentPosition, radiuses[INDEX_ALIGNMENT], neighbors)) {
+			var distvec = f.currentPosition - me.currentPosition;
 			if (distvec.sqrMagnitude < sqrMinRadius)
 				continue;
-			v += f.velocity;
+			v += f.currentVelocity;
 			count++;
 		}
 		if (count > 0) {
-			v = v / count - me.velocity;
+			v = v / count - me.currentVelocity;
 		}
 		return weights[INDEX_ALIGNMENT] * v;
 	}
 	
-	Vector3 Cohesion(Boid3D me, Boid3D[] neighbors) {
+	Vector3 Cohesion(Vehicle3D me, Vehicle3D[] neighbors) {
 		var v = Vector3.zero;
 		var count = 0;
 		var sqrMinRadius = radiuses[INDEX_ALIGNMENT] * radiuses[INDEX_ALIGNMENT];
-		foreach (var f in FindInRadius(me.position, radiuses[INDEX_COHESION], neighbors)) {
-			var distvec = f.position - me.position;
+		foreach (var f in FindInRadius(me.currentPosition, radiuses[INDEX_COHESION], neighbors)) {
+			var distvec = f.currentPosition - me.currentPosition;
 			if (distvec.sqrMagnitude < sqrMinRadius)
 				continue;
-			v += f.position;
+			v += f.currentPosition;
 			count++;
 		}
 		if (count > 0) {
-			v = v / count - me.position;
+			v = v / count - me.currentPosition;
 		}
 		return weights[INDEX_COHESION] * v;
 	}
@@ -135,21 +135,25 @@ public class Crowd3D : MonoBehaviour {
 		var fieldSize = _fieldBounds.size;
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
-			if (_fieldBounds.Contains(fish.position))
+			if (_fieldBounds.Contains(fish.currentPosition))
 				continue;
-			var relativePos = fish.position - fieldBase;
+			var relativePos = fish.currentPosition - fieldBase;
 			var t = new Vector3(Mathf.Repeat(relativePos.x / fieldSize.x, 1f), 
 				Mathf.Repeat(relativePos.y / fieldSize.y, 1f), 
 				Mathf.Repeat(relativePos.z / fieldSize.z, 1f));
-			fish.position = Vector3.Scale(t, fieldSize) + fieldBase;
+			fish.currentPosition = Vector3.Scale(t, fieldSize) + fieldBase;
 		}
 	}
 	
-	IEnumerable<Boid3D> FindInRadius(Vector3 center, float radius, Boid3D[] neighbors) {
+	IEnumerable<Vehicle3D> FindInRadius(Vector3 center, float radius, Vehicle3D[] neighbors) {
 		var sqrRadius = radius * radius;
 		foreach (var b in neighbors) {
-			if ((b.position - center).sqrMagnitude < sqrRadius)
+			if ((b.currentPosition - center).sqrMagnitude < sqrRadius)
 				yield return b;
 		}
 	}
+}
+
+public interface IBehaviour {
+	Vector3 Calculate(Vehicle3D me, Vehicle3D[] neighbors);
 }

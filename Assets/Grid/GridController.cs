@@ -7,7 +7,7 @@ public class GridController : MonoBehaviour {
 	public ParticleSystem shuriken;
 	public Marker[] markers;
 	
-	private IUniformGrid _grid;
+	private IPositionUniverse _grid;
 	private ParticleSystem.Particle[] _particles;
 	private Vector3[] _positions;
 	private int[] _ids;
