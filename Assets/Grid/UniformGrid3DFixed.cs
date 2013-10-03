@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class UniformGrid3DFixed : IPositionUniverse {
+	public const float CUBIC_ROOT = 1.0f / 3.0f;
 	public readonly static Vector3 SMALL_AMOUNT = 1e-4f * Vector3.one;
 	public int nEntitiesPerCell = 4;
 	
@@ -20,15 +21,16 @@ public class UniformGrid3DFixed : IPositionUniverse {
 		var world = Encapsulate(positions, length);
 		_worldMin = world.min;
 		var size = world.size + SMALL_AMOUNT;
-		var scale = Mathf.Sqrt((float)length  / (size.x * size.y));
-		_nX = Mathf.Max(1, (int)(size.x * scale));
-		_nY = Mathf.Max(1, (int)(size.y * scale));
-		_nZ = Mathf.Max(1, (int)(size.z * scale));
+		var scale = Mathf.Pow((float)length  / (size.x * size.y * size.z), CUBIC_ROOT);
+		_nX = 1 + (int)(size.x * scale);
+		_nY = 1 + (int)(size.y * scale);
+		_nZ = 1 + (int)(size.z * scale);
 		var cellSize = new Vector3(size.x / _nX, size.y / _nY, size.z / _nZ);
 		_rCellSize = new Vector3(1f / cellSize.x, 1f / cellSize.y, 1f / cellSize.z);
 		if (_counters.Length < (_nX * _nY * _nZ)) {
 			_cells = new int[nEntitiesPerCell * _nX * _nY * _nZ];
 			_counters = new int[_nX * _nY * _nZ];
+			Debug.Log(string.Format("Create Uniform Grid ({0}x{1}x{2})", _nX, _nY, _nZ));
 		} else {
 			System.Array.Clear(_counters, 0, _counters.Length);
 		}

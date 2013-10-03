@@ -14,15 +14,27 @@ public class Crowd3D : MonoBehaviour {
 	public float minSpeed;
 	public float maxSpeed;
 	public float maxForce;
-	public float[] weights;
-	public float[] radiuses;
 	public float acceleration;
+	public Transform[] spheres;
+
+	public float antiPenetrateRadius = 0.01f;
+	public float antiPenetrateWeight = 0.01f;
+	public float separateRadius = 0.5f;
+	public float separateWeight = 0.5f;
+	public float alignRadius = 0.001f;
+	public float alignWeight = 1f;
+	public float cohereRadius = 0.1f;
+	public float cohereWeight = 1.5f;
+	public float avoidanceWeight = 1f;
+	public float avoidanceCylinderLength = 3f;
+	public float avoidanceCylinderRadius = 0.5f;
 	
 	private List<Vehicle3D> _fishes;
 	private Bounds _fieldBounds;
 	private IPositionUniverse _grid;
 	private Vector3[] _positions;
 	private int[] _ids;
+	private Sphere[] _spheres;
 
 	// Use this for initialization
 	void Start () {
@@ -31,7 +43,7 @@ public class Crowd3D : MonoBehaviour {
 			var f = (GameObject)Instantiate(fishfab);
 			f.transform.parent = transform;
 			var b = f.GetComponent<Vehicle3D>();
-			b.currentVelocity = maxSpeed * Random.insideUnitSphere.normalized;
+			b.velocity = maxSpeed * Random.insideUnitSphere.normalized;
 			_fishes.Add(b);
 		}
 		
@@ -40,11 +52,13 @@ public class Crowd3D : MonoBehaviour {
 		_positions = new Vector3[nFishes];
 		_ids = new int[_fishes.Count];
 		for (int i = 0; i < nFishes; i++) {
-			_positions[i] = _fishes[i].currentPosition;
+			_positions[i] = _fishes[i].position;
 			_ids[i] = i;
 		}
-		_grid = new UniformGrid2DFixed();
+		_grid = new UniformGrid3DFixed();
 		_grid.Build(_positions, _ids, nFishes);
+		
+		_spheres = System.Array.ConvertAll(spheres, (t) => new Sphere(){ position = t.position, radius = t.localScale.x });
 	}
 
 	// Update is called once per frame
@@ -54,106 +68,57 @@ public class Crowd3D : MonoBehaviour {
 		
 		boundPosition ();
 		for (int i = 0; i < nFishes; i++)
-			_positions[i] = _fishes[i].currentPosition;
+			_positions[i] = _fishes[i].position;
 		_grid.Build(_positions, _ids, nFishes);
 		
 		var sqrMaxSpeed = maxSpeed * maxSpeed;
 		var sqrMinSpeed = minSpeed * minSpeed;
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
-			var neighborIndices = _grid.GetNeighbors(fish.currentPosition, radiuses[INDEX_COHESION]).ToArray();
-			var neighbors = System.Array.ConvertAll(neighborIndices, (iNeighbor) => _fishes[iNeighbor]);
-			var velocityAntiPenetrate = AntiPenetrate(fish, neighbors);
-			var velocitySeparate = Separate(fish, neighbors);
-			var velocityAlignment = Alignment(fish, neighbors);
-			var velocityCohesion = Cohesion(fish, neighbors);
-			dvs[i] = velocityAntiPenetrate + velocitySeparate + velocityAlignment + velocityCohesion;
+			var indices = _grid.GetNeighbors(fish.position, cohereRadius).ToArray();
+			var neighbors = System.Array.ConvertAll(indices, (iNeighbor) => _fishes[iNeighbor]);
+			var nNeighbors = neighbors.Length;
 			
-			fish.currentVelocity += dvs[i];
-			var sqrSpeed = fish.currentVelocity.sqrMagnitude;
+			var sphereAvoidance = (_spheres.Length == 0 ? Vector3.zero : avoidanceWeight 
+				* SteeringBehaviours.SphereAvoidance(fish, _spheres, avoidanceCylinderLength, avoidanceCylinderRadius));
+			var antiPenetration = antiPenetrateWeight
+				* SteeringBehaviours.AntiPenetrate(fish, neighbors, nNeighbors, antiPenetrateRadius);
+			var separation = separateWeight 
+				* SteeringBehaviours.Separate(fish, neighbors, nNeighbors, separateRadius);
+			var alignment = alignWeight
+				* SteeringBehaviours.Align(fish, neighbors, nNeighbors, alignRadius, separateRadius);
+			var cohesion = cohereWeight 
+				* SteeringBehaviours.Cohere(fish, neighbors, nNeighbors, cohereRadius, separateRadius);
+			dvs[i] = sphereAvoidance + antiPenetration + separation + alignment + cohesion;
+			
+			fish.velocity += dvs[i];
+			var sqrSpeed = fish.velocity.sqrMagnitude;
 			if (sqrMaxSpeed < sqrSpeed)
-				fish.currentVelocity = fish.currentVelocity.normalized * maxSpeed;
+				fish.velocity = fish.velocity.normalized * maxSpeed;
 			else if (sqrSpeed < sqrMinSpeed)
-				fish.currentVelocity *= 1f + acceleration * dt;
+				fish.velocity *= 1f + acceleration * dt;
 		}
 	}
 	
-	Vector3 AntiPenetrate(Vehicle3D me, Vehicle3D[] neighbors) {
-		var v = Vector3.zero;
-		if (FindInRadius(me.currentPosition, radiuses[INDEX_ANTI_PENET], neighbors).Count() > 0) {
-			v = Random.insideUnitCircle * maxSpeed;
-		}
-		return weights[INDEX_ANTI_PENET] * v;
-	}
-	
-	Vector3 Separate(Vehicle3D me, Vehicle3D[] neighbors) {
-		var v = Vector3.zero;
-		foreach (var f in FindInRadius(me.currentPosition, radiuses[INDEX_SEPARATE], neighbors)) {
-			var distvec = f.currentPosition - me.currentPosition;
-			v -= distvec;
-		}
-		return weights[INDEX_SEPARATE] * v;
-	}
-	
-	Vector3 Alignment(Vehicle3D me, Vehicle3D[] neighbors) {
-		var v = Vector3.zero;
-		var count = 0;
-		var sqrMinRadius = radiuses[INDEX_SEPARATE] * radiuses[INDEX_SEPARATE];
-		foreach (var f in FindInRadius(me.currentPosition, radiuses[INDEX_ALIGNMENT], neighbors)) {
-			var distvec = f.currentPosition - me.currentPosition;
-			if (distvec.sqrMagnitude < sqrMinRadius)
-				continue;
-			v += f.currentVelocity;
-			count++;
-		}
-		if (count > 0) {
-			v = v / count - me.currentVelocity;
-		}
-		return weights[INDEX_ALIGNMENT] * v;
-	}
-	
-	Vector3 Cohesion(Vehicle3D me, Vehicle3D[] neighbors) {
-		var v = Vector3.zero;
-		var count = 0;
-		var sqrMinRadius = radiuses[INDEX_ALIGNMENT] * radiuses[INDEX_ALIGNMENT];
-		foreach (var f in FindInRadius(me.currentPosition, radiuses[INDEX_COHESION], neighbors)) {
-			var distvec = f.currentPosition - me.currentPosition;
-			if (distvec.sqrMagnitude < sqrMinRadius)
-				continue;
-			v += f.currentPosition;
-			count++;
-		}
-		if (count > 0) {
-			v = v / count - me.currentPosition;
-		}
-		return weights[INDEX_COHESION] * v;
-	}
-	
-	void boundPosition ()
-	{
+	void boundPosition () {
 		var fieldBase = _fieldBounds.min;
 		var fieldSize = _fieldBounds.size;
 		for (int i = 0; i < _fishes.Count; i++) {
 			var fish = _fishes[i];
-			if (_fieldBounds.Contains(fish.currentPosition))
+			if (_fieldBounds.Contains(fish.position))
 				continue;
-			var relativePos = fish.currentPosition - fieldBase;
+			var relativePos = fish.position - fieldBase;
 			var t = new Vector3(Mathf.Repeat(relativePos.x / fieldSize.x, 1f), 
 				Mathf.Repeat(relativePos.y / fieldSize.y, 1f), 
 				Mathf.Repeat(relativePos.z / fieldSize.z, 1f));
-			fish.currentPosition = Vector3.Scale(t, fieldSize) + fieldBase;
+			fish.position = Vector3.Scale(t, fieldSize) + fieldBase;
 		}
 	}
 	
-	IEnumerable<Vehicle3D> FindInRadius(Vector3 center, float radius, Vehicle3D[] neighbors) {
-		var sqrRadius = radius * radius;
-		foreach (var b in neighbors) {
-			if ((b.currentPosition - center).sqrMagnitude < sqrRadius)
-				yield return b;
-		}
+	public class Sphere : SteeringBehaviours.ISphere {
+		#region ISphere implementation
+		public Vector3 position { get; set; }
+		public float radius { get; set; }
+		#endregion
 	}
-}
-
-public interface IBehaviour {
-	Vector3 Calculate(Vehicle3D me, Vehicle3D[] neighbors);
 }
