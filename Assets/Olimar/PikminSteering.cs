@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class Steering : MonoBehaviour {
+public class PikminSteering : MonoBehaviour {
 	public float maxForce;
 	public float decelerationFollowPath;
 	public float radiusNeighbor;

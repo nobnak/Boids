@@ -17,7 +17,7 @@ public class SteeringBehaviours {
 		ISphere closestSphere = null;
 		
 		foreach (var sp in spheres) {
-			var sqrEffectiveRadius = (cylinderLength + sp.radius) * (cylinderLength + sp.radius);
+			var sqrEffectiveRadius = cylinderLength * cylinderLength + sp.radius * sp.radius;
 			var me2sp = sp.position - me.position;
 			if (sqrEffectiveRadius < me2sp.sqrMagnitude)
 				continue;
@@ -44,9 +44,11 @@ public class SteeringBehaviours {
 		var distMult = 1.0f + (cylinderLength - closestIntersectionX) / cylinderLength;
 		var sideForce = Vector3.Dot(me.forward, toSp) * me.forward - toSp;
 		var sideForceMag = sideForce.magnitude;
-		sideForce *= (sideForceMag - closestSphere.radius) * distMult;
+		sideForce *= (closestSphere.radius + cylinderRadius - sideForceMag) / sideForceMag * distMult;
 		
-		return sideForce;
+		var breakForce = -0.2f * (cylinderLength - closestIntersectionX) * toSp.normalized;
+		
+		return sideForce + breakForce;
 	}
 	
 	#region BOID

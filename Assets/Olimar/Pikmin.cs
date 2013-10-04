@@ -11,7 +11,7 @@ public class Pikmin : MonoBehaviour {
 	[HideInInspector]
 	public PikminGrid partition;
 
-	public Steering Steering { get; private set; }
+	public PikminSteering Steering { get; private set; }
 	public Vehicle Vehicle { get; private set; }
 	
 	public State state;
@@ -22,7 +22,7 @@ public class Pikmin : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		Steering = GetComponent<Steering>();
+		Steering = GetComponent<PikminSteering>();
 		Vehicle = GetComponent<Vehicle>();
 		Steering.tracker = traker;
 		Steering.me = this;

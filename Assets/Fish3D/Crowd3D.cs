@@ -58,12 +58,11 @@ public class Crowd3D : MonoBehaviour {
 		_grid = new UniformGrid3DFixed();
 		_grid.Build(_positions, _ids, nFishes);
 		
-		_spheres = System.Array.ConvertAll(spheres, (t) => new Sphere(){ position = t.position, radius = t.localScale.x });
+		_spheres = System.Array.ConvertAll(spheres, (t) => new Sphere(){ position = t.position, radius = t.localScale.x * 0.5f });
 	}
 
 	// Update is called once per frame
 	void Update () {
-		var dvs = new Vector3[_fishes.Count];
 		var dt = Time.deltaTime;
 		
 		boundPosition ();
@@ -79,25 +78,40 @@ public class Crowd3D : MonoBehaviour {
 			var neighbors = System.Array.ConvertAll(indices, (iNeighbor) => _fishes[iNeighbor]);
 			var nNeighbors = neighbors.Length;
 			
-			var sphereAvoidance = (_spheres.Length == 0 ? Vector3.zero : avoidanceWeight 
-				* SteeringBehaviours.SphereAvoidance(fish, _spheres, avoidanceCylinderLength, avoidanceCylinderRadius));
-			var antiPenetration = antiPenetrateWeight
-				* SteeringBehaviours.AntiPenetrate(fish, neighbors, nNeighbors, antiPenetrateRadius);
-			var separation = separateWeight 
-				* SteeringBehaviours.Separate(fish, neighbors, nNeighbors, separateRadius);
-			var alignment = alignWeight
-				* SteeringBehaviours.Align(fish, neighbors, nNeighbors, alignRadius, separateRadius);
-			var cohesion = cohereWeight 
-				* SteeringBehaviours.Cohere(fish, neighbors, nNeighbors, cohereRadius, separateRadius);
-			dvs[i] = sphereAvoidance + antiPenetration + separation + alignment + cohesion;
-			
-			fish.velocity += dvs[i];
+			var forceAccumulated = CalculateSteering (fish, neighbors, nNeighbors);			
+			fish.velocity += forceAccumulated;
 			var sqrSpeed = fish.velocity.sqrMagnitude;
 			if (sqrMaxSpeed < sqrSpeed)
 				fish.velocity = fish.velocity.normalized * maxSpeed;
 			else if (sqrSpeed < sqrMinSpeed)
 				fish.velocity *= 1f + acceleration * dt;
 		}
+	}
+
+	Vector3 CalculateSteering (Vehicle3D fish, Vehicle3D[] neighbors, int nNeighbors) {
+		var sqrMaxForce = maxForce * maxForce;
+		var v = Vector3.zero;
+		
+		v += antiPenetrateWeight * SteeringBehaviours.AntiPenetrate(fish, neighbors, nNeighbors, antiPenetrateRadius);
+		if (sqrMaxForce < v.sqrMagnitude)
+			return v;
+		
+		if (_spheres.Length > 0) {
+			v += avoidanceWeight * SteeringBehaviours.SphereAvoidance(fish, _spheres, avoidanceCylinderLength, avoidanceCylinderRadius);
+			if (sqrMaxForce < v.sqrMagnitude)
+				return v;
+		}
+		
+		v += separateWeight * SteeringBehaviours.Separate(fish, neighbors, nNeighbors, separateRadius);
+		if (sqrMaxForce < v.sqrMagnitude)
+			return v;
+		
+		v += alignWeight * SteeringBehaviours.Align(fish, neighbors, nNeighbors, alignRadius, separateRadius);
+		if (sqrMaxForce < v.sqrMagnitude)
+			return v;
+		
+		v += cohereWeight * SteeringBehaviours.Cohere(fish, neighbors, nNeighbors, cohereRadius, separateRadius);
+		return v;
 	}
 	
 	void boundPosition () {
