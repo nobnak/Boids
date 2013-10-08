@@ -9,6 +9,7 @@ public class Crowd3D : MonoBehaviour {
 	public const int INDEX_COHESION = 3;
 	
 	public GameObject field;
+	public Transform leader;
 	public GameObject fishfab;
 	public int nFishes;
 	public float minSpeed;
@@ -28,6 +29,7 @@ public class Crowd3D : MonoBehaviour {
 	public float avoidanceWeight = 1f;
 	public float avoidanceCylinderLength = 3f;
 	public float avoidanceCylinderRadius = 0.5f;
+	public float followLeaderWeight = 1f;
 	
 	private List<Vehicle3D> _fishes;
 	private Bounds _fieldBounds;
@@ -47,7 +49,8 @@ public class Crowd3D : MonoBehaviour {
 			_fishes.Add(b);
 		}
 		
-		_fieldBounds = field.collider.bounds;
+		if (field != null)
+			_fieldBounds = field.collider.bounds;
 		
 		_positions = new Vector3[nFishes];
 		_ids = new int[_fishes.Count];
@@ -65,7 +68,9 @@ public class Crowd3D : MonoBehaviour {
 	void Update () {
 		var dt = Time.deltaTime;
 		
-		boundPosition ();
+		if (field != null)
+			boundPosition ();
+		
 		for (int i = 0; i < nFishes; i++)
 			_positions[i] = _fishes[i].position;
 		_grid.Build(_positions, _ids, nFishes);
@@ -101,6 +106,12 @@ public class Crowd3D : MonoBehaviour {
 			if (sqrMaxForce < v.sqrMagnitude)
 				return v;
 		}
+
+		if (leader != null) {
+			v += followLeaderWeight * SteeringBehaviours.Follow(fish, leader.position);
+			if (sqrMaxForce < v.sqrMagnitude)
+				return v;
+		}
 		
 		v += separateWeight * SteeringBehaviours.Separate(fish, neighbors, nNeighbors, separateRadius);
 		if (sqrMaxForce < v.sqrMagnitude)
@@ -111,7 +122,12 @@ public class Crowd3D : MonoBehaviour {
 			return v;
 		
 		v += cohereWeight * SteeringBehaviours.Cohere(fish, neighbors, nNeighbors, cohereRadius, separateRadius);
+		if (sqrMaxForce < v.sqrMagnitude)
+			return v;
+
+		
 		return v;
+		
 	}
 	
 	void boundPosition () {

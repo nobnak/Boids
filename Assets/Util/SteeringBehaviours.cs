@@ -51,6 +51,27 @@ public class SteeringBehaviours {
 		return sideForce + breakForce;
 	}
 	
+	public static Vector3 Seek(Vehicle3D me, Vector3 position) {
+		var toDest = position - me.position;
+		var desiredVelocity = toDest.normalized * me.maxSpeed;
+		return desiredVelocity - me.velocity;
+	}
+	
+	public static Vector3 Arrive(Vehicle3D me, Vector3 position, float baseSpeed) {
+		var toDest = position - me.position;
+		var dist = toDest.magnitude;
+		if (dist < 1e-3f)
+			return Vector3.zero;
+		
+		var speed = Mathf.Min(me.maxSpeed, dist * baseSpeed);
+		return toDest * (speed / dist);
+	}
+	
+	public static Vector3 Follow(Vehicle3D me, Vector3 destination) {
+		var toDest = destination - me.position;
+		return toDest;
+	}
+	
 	#region BOID
 	public static Vector3  Separate(Vehicle3D me, Vehicle3D[] neighbors, int nNeighbors, float radius) {
 		var v = Vector3.zero;
