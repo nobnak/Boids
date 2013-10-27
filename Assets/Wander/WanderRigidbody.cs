@@ -3,6 +3,8 @@ using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 public class WanderRigidbody : MonoBehaviour {
+	public Transform wanderTarget;
+	
 	public float radius;
 	public float distance;
 	public float power;
@@ -27,6 +29,7 @@ public class WanderRigidbody : MonoBehaviour {
 		_targetLocal = radius * _targetLocal.normalized;
 		
 		var targetWorld = transform.TransformPoint(_targetLocal + distance * Vector2.up);
+		wanderTarget.position = targetWorld;
 		var force = (Vector2)(targetWorld - transform.position);
 		rigidbody.AddForce(power * force);
 
