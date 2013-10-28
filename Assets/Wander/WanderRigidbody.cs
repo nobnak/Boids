@@ -16,6 +16,7 @@ public class WanderRigidbody : MonoBehaviour {
 	
 	public float maxSpeed;
 	public float minSpeed;
+	public float maxRotationSpeed;
 	
 	private Vector2 _targetLocal;
 
@@ -47,7 +48,7 @@ public class WanderRigidbody : MonoBehaviour {
 		rigidbody.AddForce(wallAvoidWeight * wallAvoidForce);
 
 		ClampSpeed();		
-		UpdateRotation();
+		UpdateRotation(dt);
 	}
 
 	void ClampSpeed () {
@@ -58,10 +59,12 @@ public class WanderRigidbody : MonoBehaviour {
 		}
 	}
 
-	void UpdateRotation () 	{
+	void UpdateRotation (float dt) 	{
 		if (1e-4f < rigidbody.velocity.sqrMagnitude) {
-			var forward = rigidbody.velocity.normalized;
-			rigidbody.MoveRotation(Quaternion.FromToRotation(Vector3.up, forward));
+			var speed = rigidbody.velocity.magnitude;
+			var forward = rigidbody.velocity / speed;
+			var to = Quaternion.FromToRotation(Vector3.up, forward);
+			rigidbody.MoveRotation(Quaternion.RotateTowards(rigidbody.rotation, to, speed * maxRotationSpeed * dt));
 		}
 	}
 }
